@@ -89,6 +89,17 @@ jobs:
               popd
               tree ${GITHUB_WORKSPACE}/output
 
+      - name: nsign payload
+        run: |
+              pushd opensbi
+                cp -v ${GITHUB_WORKSPACE}/output/fw_payload.bin sign/preload/
+                pushd sign/preload
+                  sed -i "s#HOLDER#$(pwd)#g" bootchain.cfg
+                  ../nsign bootchain.cfg
+                  cp -v bootloader_secboot_ddr5.bin ${GITHUB_WORKSPACE}/output/bootloader_secboot_ddr5_${{ matrix.name }}.bin
+                popd
+              popd
+
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v4
         with:

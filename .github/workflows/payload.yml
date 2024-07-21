@@ -1,0 +1,97 @@
+name: rockos-uboot-payload
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"
+
+env:
+  mainline_toolchain: https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2024.04.12
+  mainline_toolchain_file_name: riscv64-glibc-ubuntu-22.04-gcc-nightly-2024.04.12-nightly.tar.gz
+  wget_alias: 'wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 0'
+  ARCH: riscv
+  uboot_branch: rockos-dev
+  CROSS_COMPILE: riscv64-unknown-linux-gnu-
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: eic-7700-evb
+            dt_name: eic7700-evb
+            config: eic7700_evb_defconfig
+
+          - name: eic-7700-evb-a2
+            dt_name: eic7700-evb-a2
+            config: eic7700_evb_defconfig
+
+          - name: hifive-p550
+            dt_name: hifive-premier-550
+            config: hifive_premier_p550_defconfig
+
+    steps:
+      - name: Install software
+        run: |
+              sudo apt update && \
+              sudo apt install -y gdisk dosfstools g++-12-riscv64-linux-gnu cpp-12-riscv64-linux-gnu build-essential \
+                                  libncurses-dev gawk flex bison openssl libssl-dev tree \
+                                  dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf device-tree-compiler
+
+      - name: Checkout opensbi
+        uses: actions/checkout@v4
+        with:
+          path: opensbi
+
+      - name: Checkout rockos-u-boot
+        uses: actions/checkout@v4
+        with:
+          repository: rockos-riscv/rockos-u-boot
+          ref: ${{ matrix.branch }}
+          path: uboot
+
+      - name: Download toolchain
+        run: |
+              mkdir output
+              ${wget_alias} ${mainline_toolchain}/${mainline_toolchain_file_name}
+              tar -xvf ${mainline_toolchain_file_name} -C /opt
+              export PATH="/opt/riscv/bin:$PATH"
+              echo "PATH=${PATH}" >> $GITHUB_ENV
+              ${CROSS_COMPILE}gcc -v
+
+      - name: Compile uboot
+        run: |
+              pushd uboot
+                make ${{ matrix.config }}
+                make -j$(nproc)
+                sed -i "s#eswin/eic7700-evb-a2.dtb#eswin/${{ matrix.dt_name }}.dtb#" .config
+                cp -av u-boot.bin ${GITHUB_WORKSPACE}/output/
+                cp -av u-boot.dtb ${GITHUB_WORKSPACE}/output/
+              popd
+              tree ${GITHUB_WORKSPACE}/output
+
+      - name: Compile payload
+        run: |
+              pushd opensbi
+                make PLATFORM=eswin/eic770x FW_PAYLOAD=y \
+                  FW_FDT_PATH=${GITHUB_WORKSPACE}/output/u-boot.dtb \
+                  FW_PAYLOAD_PATH=${GITHUB_WORKSPACE}/output/u-boot.bin \
+                  CHIPLET="BR2_CHIPLET_1" \
+                  CHIPLET_DIE_AVAILABLE="BR2_CHIPLET_1_DIE0_AVAILABLE" \
+                  MEM_MODE="BR2_MEMMODE_FLAT" \
+                  PLATFORM_CLUSTER_X_CORE="BR2_CLUSTER_4_CORE" \
+                  -j $(nproc)
+                cp -v build/platform/eswin/eic770x/firmware/fw_payload.bin ${GITHUB_WORKSPACE}/output/fw_payload.bin
+              popd
+              tree ${GITHUB_WORKSPACE}/output
+
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rockos-uboot-payload-${{ matrix.name }}-${{ matrix.dt_name }}
+          path: output/*
+          retention-days: 30

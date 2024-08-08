@@ -12,7 +12,7 @@ env:
   mainline_toolchain_file_name: riscv64-glibc-ubuntu-22.04-gcc-nightly-2024.04.12-nightly.tar.gz
   wget_alias: 'wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 0'
   ARCH: riscv
-  uboot_branch: rockos-dev
+  uboot_branch: rockos-dev-ecc
   CROSS_COMPILE: riscv64-unknown-linux-gnu-
 
 jobs:

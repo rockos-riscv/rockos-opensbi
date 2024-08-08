@@ -652,10 +652,17 @@ int sbi_domain_init(struct sbi_scratch *scratch, u32 cold_hartid)
 	|-----------------------|---------------
 */
 
+#define ECC_RESERVED_ALIGN_16G	0x400000000UL
+#define ECC_RESERVED_ALIGN_32G	0x780000000UL
+#define NO_ECC_ALIGN		0x1000000000UL
+#define NO_NEED_RESERVED_ALIGN	0x8000000000UL
+#define ECC_RESERVED_ALIGN	ECC_RESERVED_ALIGN_16G
+
+
 #if defined(BR2_CHIPLET_1_DIE0_AVAILABLE) && defined(BR2_CHIPLET_1)
-	/* If enable DDR ECC, should reserve highest 2GB space for ecc within 16GB all size, start from 0x400000000UL */
-	sbi_domain_memregion_init(0x1000000000UL, 0x3fffffUL, SBI_DOMAIN_MEMREGION_MMODE,
-				  &root_hole_region,0x7000000000UL);
+	/* If enable DDR ECC, should reserve highest space for ecc with 1/8 of all size */
+	sbi_domain_memregion_init(ECC_RESERVED_ALIGN, 0x3fffffUL, SBI_DOMAIN_MEMREGION_MMODE,
+				  &root_hole_region,(NO_NEED_RESERVED_ALIGN - ECC_RESERVED_ALIGN));
 	domain_memregion_inithole(&root_memregs[root_memregs_count++]);
 #elif defined(BR2_CHIPLET_1_DIE1_AVAILABLE) && defined(BR2_CHIPLET_1)
 	sbi_domain_memregion_init(0x80000000UL, 0x3fffffUL, SBI_DOMAIN_MEMREGION_MMODE,

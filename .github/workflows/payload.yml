@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: rockos-riscv/rockos-u-boot
-          ref: ${{ matrix.branch }}
+          ref: ${{ env.uboot_branch }}
           path: uboot
 
       - name: Download toolchain

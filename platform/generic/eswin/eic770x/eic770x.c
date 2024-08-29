@@ -5,6 +5,7 @@
 #include <sbi/riscv_io.h>
 #include <sbi/sbi_ecall_interface.h>
 #include <sbi/sbi_system.h>
+#include <sbi/sbi_timer.h>
 
 #ifdef CONFIG_PLATFORM_ESWIN_EIC7700
 #define BR2_CHIPLET_1
@@ -59,6 +60,10 @@ typedef enum {
 	CMD_RESET = 0x02,
 	CMD_READ_BOARD_INFO = 0x03,
 	CMD_CONTROL_LED = 0x04,
+	CMD_PVT_INFO,
+	CMD_BOARD_STATUS,
+	CMD_POWER_INFO,
+	CMD_RESTART,    //cold reboot with power off/on
 	// You can continue adding other command types
 } CommandType;
 
@@ -117,6 +122,20 @@ static int eic770x_core_shutdown(void)
 	return 0;
 };
 
+static int eic770x_cold_reset(void)
+{
+	Message shutdown_reply = {
+		.msg_type = MSG_NOTIFLY,
+		.cmd_type = CMD_RESTART,
+		.data_len = 0x0,
+	};
+	transmit_message(&shutdown_reply);
+	sbi_timer_mdelay(3000);
+	/*When it is not a DVB board, reboot can still be done, but there is no real power off/power on action at that time.*/
+	writel(EIC770X_SYS_RESET_VALUE, (volatile void *)EIC770X_SYS_RESET_ADDR);
+	return 0;
+};
+
 static int eic770x_core_reset(void)
 {
 	writel(EIC770X_SYS_RESET_VALUE, (volatile void *)EIC770X_SYS_RESET_ADDR);
@@ -142,6 +161,8 @@ static void eic770x_system_reset(u32 type, u32 reason)
 		eic770x_core_shutdown();
 		break;
 	case SBI_SRST_RESET_TYPE_COLD_REBOOT:
+		eic770x_cold_reset();
+		break;
 	case SBI_SRST_RESET_TYPE_WARM_REBOOT:
 		eic770x_core_reset();
 		break;

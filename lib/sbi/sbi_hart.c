@@ -342,8 +342,8 @@ static void init_fcsr(void)
 	__asm__ volatile("csrw 0x7c4 , %0" : : "r"(hwpf));
 
 	/* enable speculative icache refill */
-	__asm__ volatile("csrw 0x7c1 , x0" : :);
-	__asm__ volatile("csrw 0x7c2 , x0" : :);
+	// __asm__ volatile("csrw 0x7c1 , x0" : :);
+	// __asm__ volatile("csrw 0x7c2 , x0" : :);
 
 }
 

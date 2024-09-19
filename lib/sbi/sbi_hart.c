@@ -327,23 +327,20 @@ static void init_bus_blocker(void)
 
 static void init_fcsr(void)
 {
-	unsigned long hwpf;	// Hardware Prefetcher 0 : 0x104095C1BE241 | Hardware Prefetcher 1 : 0x929F
+	unsigned long hwpf;
 	
-	hwpf = 0x104095C1BE241UL;
-	__asm__ volatile("csrw 0x7c3 , %0" : : "r"(hwpf));
-	hwpf = 0x929FUL;
-        //cleanup fields
-        hwpf &= (~(0x1f << 5)); //[9:5]  cleanup  hitCacheThrdL2
-        hwpf &= (~(0x7  << 14)); //[16:14] cleanup numL2PFIssQEnt
-
-        //set new value
-        hwpf |= (0x1f << 5); //[9:5]    hitCacheThrdL2
-        hwpf |= (0x7  << 14); //[16:14] numL2PFIssQEnt
-	__asm__ volatile("csrw 0x7c4 , %0" : : "r"(hwpf));
-
 	/* enable speculative icache refill */
-	// __asm__ volatile("csrw 0x7c1 , x0" : :);
-	// __asm__ volatile("csrw 0x7c2 , x0" : :);
+	hwpf = 0x4000UL;	// [14]	Disable Indirect-Jump Target Predictor
+	__asm__ volatile("csrw 0x7c1 , %0" : : "r"(hwpf));
+
+	hwpf = 0x80UL;	// [7]	Force Noisy Evict to send release message from any valid coherence permission state
+	__asm__ volatile("csrw 0x7c2 , %0" : : "r"(hwpf));
+
+	hwpf = 0x5c1be649UL;
+	__asm__ volatile("csrw 0x7c3 , %0" : : "r"(hwpf));
+
+	hwpf = 0x929FUL;
+	__asm__ volatile("csrw 0x7c4 , %0" : : "r"(hwpf));
 
 }
 

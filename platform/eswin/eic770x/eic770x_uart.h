@@ -5,7 +5,7 @@
  * Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
  *
  * Authors:
- *   HuangYifeng <huangyifeng@eswincomputing.com>
+ *   Yifeng Huang <huangyifeng@eswincomputing.com>
  *
  */
 #ifndef _EIC770X_UART_H_

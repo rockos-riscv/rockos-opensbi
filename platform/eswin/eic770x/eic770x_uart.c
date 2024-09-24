@@ -6,7 +6,7 @@
  * Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
  *
  * Authors:
- *   HuangYifeng <huangyifeng@eswincomputing.com>
+ *    Yifeng Huang <huangyifeng@eswincomputing.com>
  *
  */
 

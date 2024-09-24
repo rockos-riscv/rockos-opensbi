@@ -4,9 +4,9 @@
 # Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
 #
 # Authors:
-#   XuXiang <xuxiang@eswincomputing.com>
-#   LinMin <linmin@eswincomputing.com>
-#   NingYu <ningyu@eswincomputing.com>
+#   Xiang Xu <xuxiang@eswincomputing.com>
+#   Min Lin <linmin@eswincomputing.com>
+#   Yu Ning <ningyu@eswincomputing.com>
 #
 
 # Compiler flags

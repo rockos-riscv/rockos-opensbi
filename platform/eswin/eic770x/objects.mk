@@ -4,8 +4,8 @@
 # Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
 #
 # Authors:
-#   XuXiang <xuxiang@eswincomputing.com>
-#   HuangYifeng <huangyifeng@eswincomputing.com>
+#   Xiang Xu <xuxiang@eswincomputing.com>
+#   Yifeng Huang <huangyifeng@eswincomputing.com>
 #
 
 

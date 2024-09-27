@@ -296,6 +296,7 @@ static const struct fdt_match eic770x_match[] = {
 	{ .compatible = "SiFive,FU800-dev" },
 	{ .compatible = "fu800-dev" },
 	{ .compatible = "sifive-dev" },
+        { .compatible = "eswin,eic7700" },
 	{ },
 };
 

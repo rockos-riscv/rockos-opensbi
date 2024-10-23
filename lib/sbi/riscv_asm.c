@@ -351,6 +351,71 @@ int pmp_set(unsigned int n, unsigned long prot, unsigned long addr,
 	return 0;
 }
 
+
+int pmp_set_tor(unsigned int n, unsigned long prot, unsigned long addr,
+	    unsigned long tor)
+{
+	int pmpcfg_csr, pmpcfg_shift, pmpaddr_csr;
+	unsigned long cfgmask, pmpcfg;
+	unsigned long pmpaddr;
+
+	/* check parameters */
+	if (n + 1 >= PMP_COUNT)
+		return SBI_EINVAL;
+
+	/* calculate PMP register and offset */
+#if __riscv_xlen == 32
+	pmpcfg_csr   = CSR_PMPCFG0 + (n >> 2);
+	pmpcfg_shift = (n & 3) << 3;
+#elif __riscv_xlen == 64
+	pmpcfg_csr   = (CSR_PMPCFG0 + (n >> 2)) & ~1;
+	pmpcfg_shift = (n & 7) << 3;
+#else
+# error "Unexpected __riscv_xlen"
+#endif
+	pmpaddr_csr = CSR_PMPADDR0 + n;
+
+	/* encode PMP config */
+	prot &= ~PMP_A;
+	cfgmask = ~(0xffUL << pmpcfg_shift);
+	pmpcfg	= (csr_read_num(pmpcfg_csr) & cfgmask);
+	pmpcfg |= ((prot << pmpcfg_shift) & ~cfgmask);
+
+	/* encode PMP address */
+	pmpaddr = addr >> PMP_SHIFT;
+	/* write csrs */
+	csr_write_num(pmpaddr_csr, pmpaddr);
+	csr_write_num(pmpcfg_csr, pmpcfg);
+
+	n++;
+#if __riscv_xlen == 32
+	pmpcfg_csr   = CSR_PMPCFG0 + (n >> 2);
+	pmpcfg_shift = (n & 3) << 3;
+#elif __riscv_xlen == 64
+	pmpcfg_csr   = (CSR_PMPCFG0 + (n >> 2)) & ~1;
+	pmpcfg_shift = (n & 7) << 3;
+#else
+# error "Unexpected __riscv_xlen"
+#endif
+	pmpaddr_csr = CSR_PMPADDR0 + n;
+
+	/* encode PMP config */
+	prot &= ~PMP_A;
+	prot |= PMP_A_TOR;
+	cfgmask = ~(0xffUL << pmpcfg_shift);
+	pmpcfg	= (csr_read_num(pmpcfg_csr) & cfgmask);
+	pmpcfg |= ((prot << pmpcfg_shift) & ~cfgmask);
+
+	/* encode PMP address */
+	pmpaddr = (addr + tor) >> PMP_SHIFT;
+	/* write csrs */
+	csr_write_num(pmpaddr_csr, pmpaddr);
+	csr_write_num(pmpcfg_csr, pmpcfg);
+
+	return 0;
+}
+
+
 int pmp_get(unsigned int n, unsigned long *prot_out, unsigned long *addr_out,
 	    unsigned long *log2len)
 {

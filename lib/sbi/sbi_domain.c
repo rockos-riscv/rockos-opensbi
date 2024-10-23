@@ -96,6 +96,22 @@ ulong sbi_domain_get_assigned_hartmask(const struct sbi_domain *dom,
 	return ret;
 }
 
+static unsigned long region_start(const struct sbi_domain_memregion *reg) {
+	if (reg->tor)
+		return reg->base;
+	if (reg->order < __riscv_xlen)
+		return reg->base;
+	return 0;
+}
+
+static unsigned long region_end(const struct sbi_domain_memregion *reg) {
+	if (reg->tor)
+		return reg->base + reg->tor;
+	if (reg->order < __riscv_xlen)
+		return reg->base + BIT(reg->order) - 1;
+	return -1UL;
+}
+
 void sbi_domain_memregion_init(unsigned long addr,
 				unsigned long size,
 				unsigned long flags,
@@ -121,6 +137,20 @@ void sbi_domain_memregion_init(unsigned long addr,
 	if (reg) {
 		reg->base = base;
 		reg->order = order;
+		reg->tor = 0;
+		reg->flags = flags;
+	}
+}
+
+void sbi_domain_memregion_init_tor(unsigned long addr,
+				unsigned long tor,
+				unsigned long flags,
+				struct sbi_domain_memregion *reg)
+{
+	if (reg) {
+		reg->base = addr;
+		reg->order = 22;
+		reg->tor = tor;
 		reg->flags = flags;
 	}
 }
@@ -193,10 +223,10 @@ static bool is_region_valid(const struct sbi_domain_memregion *reg)
 static bool is_region_subset(const struct sbi_domain_memregion *regA,
 			     const struct sbi_domain_memregion *regB)
 {
-	ulong regA_start = regA->base;
-	ulong regA_end = regA->base + (BIT(regA->order) - 1);
-	ulong regB_start = regB->base;
-	ulong regB_end = regB->base + (BIT(regB->order) - 1);
+	ulong regA_start = region_start(regA);
+	ulong regA_end = region_end(regA);
+	ulong regB_start = region_start(regB);
+	ulong regB_end = region_end(regB);
 
 	if ((regB_start <= regA_start) &&
 	    (regA_start < regB_end) &&
@@ -221,11 +251,12 @@ static bool is_region_compatible(const struct sbi_domain_memregion *regA,
 static bool is_region_before(const struct sbi_domain_memregion *regA,
 			     const struct sbi_domain_memregion *regB)
 {
-	if (regA->order < regB->order)
+	unsigned long sA = region_end(regA) - region_start(regA);
+	unsigned long sB = region_end(regB) - region_start(regB);
+	if (sA < sB)
 		return true;
 
-	if ((regA->order == regB->order) &&
-	    (regA->base < regB->base))
+	if ((sA == sB) && (region_start(regA) < region_start(regB)))
 		return true;
 
 	return false;
@@ -435,7 +466,6 @@ bool sbi_domain_check_addr_range(const struct sbi_domain *dom,
 void sbi_domain_dump(const struct sbi_domain *dom, const char *suffix)
 {
 	u32 i, j, k;
-	unsigned long rstart, rend;
 	struct sbi_domain_memregion *reg;
 
 	sbi_printf("Domain%d Name        %s: %s\n",
@@ -455,12 +485,8 @@ void sbi_domain_dump(const struct sbi_domain *dom, const char *suffix)
 
 	i = 0;
 	sbi_domain_for_each_memregion(dom, reg) {
-		rstart = reg->base;
-		rend = (reg->order < __riscv_xlen) ?
-			rstart + ((1UL << reg->order) - 1) : -1UL;
-
 		sbi_printf("Domain%d Region%02d    %s: 0x%" PRILX "-0x%" PRILX " ",
-			   dom->index, i, suffix, rstart, rend);
+			   dom->index, i, suffix, region_start(reg), region_end(reg));
 
 		k = 0;
 

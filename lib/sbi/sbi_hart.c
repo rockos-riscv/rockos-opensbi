@@ -346,7 +346,7 @@ static unsigned int sbi_hart_get_smepmp_flags(struct sbi_scratch *scratch,
 	return pmp_flags;
 }
 
-static void sbi_hart_smepmp_set(struct sbi_scratch *scratch,
+static int sbi_hart_smepmp_set(struct sbi_scratch *scratch,
 				struct sbi_domain *dom,
 				struct sbi_domain_memregion *reg,
 				unsigned int pmp_idx,
@@ -357,13 +357,20 @@ static void sbi_hart_smepmp_set(struct sbi_scratch *scratch,
 	unsigned long pmp_addr = reg->base >> PMP_SHIFT;
 
 	if (pmp_log2gran <= reg->order && pmp_addr < pmp_addr_max) {
-		pmp_set(pmp_idx, pmp_flags, reg->base, reg->order);
+		if (reg->tor) {
+			pmp_set_tor(pmp_idx, pmp_flags, reg->base, reg->tor);
+			return 2;
+		} else {
+			pmp_set(pmp_idx, pmp_flags, reg->base, reg->order);
+			return 1;
+		}
 	} else {
 		sbi_printf("Can not configure pmp for domain %s because"
 			   " memory region address 0x%lx or size 0x%lx "
 			   "is not in range.\n", dom->name, reg->base,
 			   reg->order);
 	}
+	return 0;
 }
 
 static int sbi_hart_smepmp_configure(struct sbi_scratch *scratch,
@@ -403,7 +410,7 @@ static int sbi_hart_smepmp_configure(struct sbi_scratch *scratch,
 		if (!pmp_flags)
 			return 0;
 
-		sbi_hart_smepmp_set(scratch, dom, reg, pmp_idx++, pmp_flags,
+		pmp_idx += sbi_hart_smepmp_set(scratch, dom, reg, pmp_idx, pmp_flags,
 				    pmp_log2gran, pmp_addr_max);
 	}
 
@@ -429,7 +436,7 @@ static int sbi_hart_smepmp_configure(struct sbi_scratch *scratch,
 		if (!pmp_flags)
 			return 0;
 
-		sbi_hart_smepmp_set(scratch, dom, reg, pmp_idx++, pmp_flags,
+		pmp_idx += sbi_hart_smepmp_set(scratch, dom, reg, pmp_idx, pmp_flags,
 				    pmp_log2gran, pmp_addr_max);
 	}
 
@@ -474,7 +481,11 @@ static int sbi_hart_oldpmp_configure(struct sbi_scratch *scratch,
 
 		pmp_addr = reg->base >> PMP_SHIFT;
 		if (pmp_log2gran <= reg->order && pmp_addr < pmp_addr_max) {
-			pmp_set(pmp_idx++, pmp_flags, reg->base, reg->order);
+			if (reg->tor) {
+				pmp_set_tor(pmp_idx, pmp_flags, reg->base, reg->tor);
+				pmp_idx += 2;
+			} else
+				pmp_set(pmp_idx++, pmp_flags, reg->base, reg->order);
 		} else {
 			sbi_printf("Can not configure pmp for domain %s because"
 				   " memory region address 0x%lx or size 0x%lx "

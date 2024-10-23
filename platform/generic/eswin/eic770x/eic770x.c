@@ -272,9 +272,41 @@ static void sbi_hart_blocker_fscr_configure(struct sbi_scratch *scratch)
 
 static int eic770x_early_init(bool cold_boot, const struct fdt_match *match)
 {
-	if (cold_boot)
+	struct sbi_domain_memregion reg;
+	if (cold_boot) {
 		sbi_system_reset_add_device(&eic770x_reset);
 
+#if defined(BR2_CHIPLET_1_DIE0_AVAILABLE) && defined(BR2_CHIPLET_1)
+		sbi_domain_memregion_init(0x2000000UL, 0xbfffUL, (SBI_DOMAIN_MEMREGION_MMIO |
+					   SBI_DOMAIN_MEMREGION_M_READABLE |
+					   SBI_DOMAIN_MEMREGION_M_WRITABLE), &reg);
+		sbi_domain_root_add_memregion(&reg);
+		sbi_domain_memregion_init_tor(0x1000000000UL, 0x7000000000UL,
+			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
+#elif defined(BR2_CHIPLET_1_DIE1_AVAILABLE) && defined(BR2_CHIPLET_1)
+		sbi_domain_memregion_init(0x22000000UL, 0xbfffUL, (SBI_DOMAIN_MEMREGION_MMIO |
+					   SBI_DOMAIN_MEMREGION_M_READABLE |
+					   SBI_DOMAIN_MEMREGION_M_WRITABLE), &reg);
+		sbi_domain_root_add_memregion(&reg);
+		sbi_domain_memregion_init_tor(0x80000000UL, 0x1f80000000UL,
+			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
+		sbi_domain_memregion_init_tor(0x3000000000UL, 0x5000000000UL,
+			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
+#elif defined(BR2_CHIPLET_2)
+		sbi_domain_memregion_init_tor(0x1000000000UL, 0x1000000000UL,
+			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
+		sbi_domain_memregion_init_tor(0x3000000000UL, 0x1000000000UL,
+			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
+		sbi_domain_memregion_init_tor(0x6000000000UL, 0x2000000000UL,
+			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
+#endif
+	}
 	return 0;
 }
 

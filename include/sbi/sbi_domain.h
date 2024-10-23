@@ -156,6 +156,9 @@ struct sbi_domain_memregion {
 
 #define SBI_DOMAIN_MEMREGION_MMIO		(1UL << 31)
 	unsigned long flags;
+
+	/** region for NAPOT(0) or TOR(size) */
+	unsigned long tor;
 };
 
 /** Maximum number of domains */
@@ -260,6 +263,10 @@ void sbi_domain_memregion_init(unsigned long addr,
 				unsigned long flags,
 				struct sbi_domain_memregion *reg);
 
+void sbi_domain_memregion_init_tor(unsigned long addr,
+				unsigned long tor,
+				unsigned long flags,
+				struct sbi_domain_memregion *reg);
 /**
  * Check whether we can access specified address for given mode and
  * memory region flags under a domain

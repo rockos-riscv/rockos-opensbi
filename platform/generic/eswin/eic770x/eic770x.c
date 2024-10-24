@@ -218,19 +218,20 @@ static int eic770x_nascent_init(void)
 
 static void init_fcsr(void)
 {
-	unsigned long hwpf;	// Hardware Prefetcher 0 : 0x104095C1BE241 | Hardware Prefetcher 1 : 0x38c84e
-
-	hwpf = 0x104095C1BE241UL;
-	__asm__ volatile("csrw 0x7c3 , %0" : : "r"(hwpf));
-	hwpf = 0x38c84eUL;
-	__asm__ volatile("csrw 0x7c4 , %0" : : "r"(hwpf));
+	unsigned long hwpf;
 
 	/* enable speculative icache refill */
-	// __asm__ volatile("csrw 0x7c1 , x0" : :);
+	hwpf = 0x4000UL;	// [14]	Disable Indirect-Jump Target Predictor
+	__asm__ volatile("csrw 0x7c1 , %0" : : "r"(hwpf));
 
-	/* disable the Store-to-Load Forwarding by setting SiFive Feature Disable 1 CSR (0x7C2). */
-	hwpf = 0xf<<21;
+	hwpf = 0x80UL;	// [7]	Force Noisy Evict to send release message from any valid coherence permission state
 	__asm__ volatile("csrw 0x7c2 , %0" : : "r"(hwpf));
+
+	hwpf = 0x5c1be649UL;
+	__asm__ volatile("csrw 0x7c3 , %0" : : "r"(hwpf));
+
+	hwpf = 0x929FUL;
+	__asm__ volatile("csrw 0x7c4 , %0" : : "r"(hwpf));
 }
 
 #ifndef BR2_CHIPLET_2

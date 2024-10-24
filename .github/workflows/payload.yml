@@ -31,7 +31,7 @@ jobs:
             config: eic7700_evb_defconfig
 
           - name: hifive-p550
-            dt_name: hifive-premier-p550
+            dt_name: eic7700-hifive-premier-p550
             config: hifive_premier_p550_defconfig
 
     steps:

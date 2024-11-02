@@ -22,17 +22,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: eic-7700-evb
+          - name: eic7700-evb
             dt_name: eic7700-evb
             config: eic7700_evb_defconfig
 
-          - name: eic-7700-evb-a2
+          - name: eic7700-evb-a2
             dt_name: eic7700-evb-a2
-            config: eic7700_evb_defconfig
+            config: eic7700_evb_a2_defconfig
 
           - name: hifive-p550
             dt_name: eic7700-hifive-premier-p550
             config: hifive_premier_p550_defconfig
+
+          - name: milkv-megrez
+            dt_name: eic7700-milkv-megrez
+            config: eic7700_evb_a2_defconfig
 
     steps:
       - name: Install software
@@ -67,8 +71,8 @@ jobs:
         run: |
               pushd uboot
                 make ${{ matrix.config }}
-                make -j$(nproc)
                 sed -i "s#eswin/eic7700-evb-a2.dtb#eswin/${{ matrix.dt_name }}.dtb#" .config
+                make -j$(nproc)
                 cp -av u-boot.bin ${GITHUB_WORKSPACE}/output/
                 cp -av u-boot.dtb ${GITHUB_WORKSPACE}/output/
               popd

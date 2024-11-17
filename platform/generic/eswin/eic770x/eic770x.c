@@ -291,6 +291,11 @@ static int eic770x_early_init(bool cold_boot, const struct fdt_match *match)
 		sbi_domain_memregion_init_tor(0x1000000000UL, 0x7000000000UL,
 			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
 		sbi_domain_root_add_memregion(&reg);
+		sbi_domain_memregion_init_tor(0xc000000000UL, 0x1000000000UL,
+			SBI_DOMAIN_MEMREGION_SU_READABLE |
+			SBI_DOMAIN_MEMREGION_SU_WRITABLE |
+			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
 #elif defined(BR2_CHIPLET_1_DIE1_AVAILABLE) && defined(BR2_CHIPLET_1)
 		sbi_domain_memregion_init(0x22000000UL, 0xbfffUL, (SBI_DOMAIN_MEMREGION_MMIO |
 					   SBI_DOMAIN_MEMREGION_M_READABLE |

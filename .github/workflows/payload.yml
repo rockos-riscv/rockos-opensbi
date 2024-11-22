@@ -38,6 +38,10 @@ jobs:
             dt_name: eic7700-milkv-megrez
             config: eic7700_evb_a2_defconfig
 
+          - name: pine64-starpro64
+            dt_name: eic7700-pine64-starpro64
+            config: eic7700_evb_a2_defconfig
+
     steps:
       - name: Install software
         run: |

@@ -825,6 +825,12 @@ int sbi_domain_init(struct sbi_scratch *scratch, u32 cold_hartid)
 	root.possible_harts = root_hmask;
 
 	/* Root domain firmware memory region */
+#ifdef CONFIG_PLATFORM_ESWIN_EIC7700
+	sbi_domain_memregion_init(scratch->fw_start, scratch->fw_size,
+				  (SBI_DOMAIN_MEMREGION_M_READABLE |
+				   SBI_DOMAIN_MEMREGION_M_WRITABLE),
+				  &root_memregs[root_memregs_count++]);
+#else
 	sbi_domain_memregion_init(scratch->fw_start, scratch->fw_rw_offset,
 				  (SBI_DOMAIN_MEMREGION_M_READABLE |
 				   SBI_DOMAIN_MEMREGION_M_EXECUTABLE),
@@ -835,6 +841,7 @@ int sbi_domain_init(struct sbi_scratch *scratch, u32 cold_hartid)
 				  (SBI_DOMAIN_MEMREGION_M_READABLE |
 				   SBI_DOMAIN_MEMREGION_M_WRITABLE),
 				  &root_memregs[root_memregs_count++]);
+#endif
 
 	root.fw_region_inited = true;
 

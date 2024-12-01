@@ -173,7 +173,11 @@ int plic_cold_irqchip_init(const struct plic_data *plic)
 	for (i = 1; i <= plic->num_src; i++)
 		plic_set_priority(plic, i, 0);
 
+#ifdef CONFIG_PLATFORM_ESWIN_EIC7700
+	return 0;
+#else
 	return sbi_domain_root_add_memrange(plic->addr, plic->size, BIT(20),
 					(SBI_DOMAIN_MEMREGION_MMIO |
 					 SBI_DOMAIN_MEMREGION_SHARED_SURW_MRW));
+#endif
 }

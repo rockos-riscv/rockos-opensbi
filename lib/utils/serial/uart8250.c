@@ -147,7 +147,11 @@ int uart8250_console_init(unsigned long base, u32 in_freq, u32 baudrate, u32 reg
 
 	sbi_console_set_device(&uart8250_console);
 
+#ifdef CONFIG_PLATFORM_ESWIN_EIC7700
+	return 0;
+#else
 	return sbi_domain_root_add_memrange(base, PAGE_SIZE, PAGE_SIZE,
 					    (SBI_DOMAIN_MEMREGION_MMIO |
 					    SBI_DOMAIN_MEMREGION_SHARED_SURW_MRW));
+#endif
 }

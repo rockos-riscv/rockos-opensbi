@@ -291,7 +291,7 @@ static int eic770x_early_init(bool cold_boot, const struct fdt_match *match)
 		sbi_domain_memregion_init_tor(0x1000000000UL, 0x7000000000UL,
 			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
 		sbi_domain_root_add_memregion(&reg);
-		sbi_domain_memregion_init_tor(0xc000000000UL, 0x1000000000UL,
+		sbi_domain_memregion_init_tor(0xc000000000UL, 0x8000000000UL,
 			SBI_DOMAIN_MEMREGION_SU_READABLE |
 			SBI_DOMAIN_MEMREGION_SU_WRITABLE |
 			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
@@ -308,14 +308,44 @@ static int eic770x_early_init(bool cold_boot, const struct fdt_match *match)
 			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
 		sbi_domain_root_add_memregion(&reg);
 #elif defined(BR2_CHIPLET_2)
-		sbi_domain_memregion_init_tor(0x1000000000UL, 0x1000000000UL,
-			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+
+		sbi_domain_memregion_init(0x02000000UL, 0x10000UL, SBI_DOMAIN_MEMREGION_MMIO, &reg);
 		sbi_domain_root_add_memregion(&reg);
-		sbi_domain_memregion_init_tor(0x3000000000UL, 0x1000000000UL,
-			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_memregion_init(0x22000000UL, 0x10000UL, SBI_DOMAIN_MEMREGION_MMIO, &reg);
 		sbi_domain_root_add_memregion(&reg);
-		sbi_domain_memregion_init_tor(0x6000000000UL, 0x2000000000UL,
-			SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+
+#define D0_ECC_RESERVED_ALIGN_16G	0x400000000UL
+#define D0_ECC_RESERVED_ALIGN_32G	0x780000000UL
+#define D1_ECC_RESERVED_ALIGN_16G	0x2380000000UL
+#define D1_ECC_RESERVED_ALIGN_32G	0x2700000000UL
+#define D0_NO_ECC_ALIGN			0x1000000000UL
+#define D1_NO_ECC_ALIGN			0x3000000000UL
+#define D0_NO_NEED_RESERVED_ALIGN	0x2000000000UL
+#define D1_NO_NEED_RESERVED_ALIGN	0x14000000000UL
+#undef ECC_MODE_ENABLE
+#ifdef ECC_MODE_ENABLE
+#define D0_RESERVED_ALIGN		D0_ECC_RESERVED_ALIGN_16G
+#define D1_RESERVED_ALIGN		D1_ECC_RESERVED_ALIGN_16G
+#else
+#define D0_RESERVED_ALIGN		D0_NO_ECC_ALIGN
+#define D1_RESERVED_ALIGN		D1_NO_ECC_ALIGN
+#endif
+
+		/* No access Die0 ECC(if needed) + reserved + LLC DIE0 */
+		sbi_domain_memregion_init_tor(D0_RESERVED_ALIGN,
+				D0_NO_NEED_RESERVED_ALIGN - D0_RESERVED_ALIGN,
+				SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
+		sbi_domain_root_add_memregion(&reg);
+
+		/* No execute permissions for system port region and interleaved llc.
+		It is aimed to solve cache problem caused by the speculative icache refill.
+		*/
+		/* No execute Die1 ECC(if needed) + reserved + LLC DIE1 + Interleaved MEM/LLC + system port (PCIE 0/1 + Die0 MEM/LLC + Die1 MEM/LLC + interleaved MEM/LLC) */
+		sbi_domain_memregion_init_tor(D1_RESERVED_ALIGN,
+				D1_NO_NEED_RESERVED_ALIGN - D1_RESERVED_ALIGN,
+				SBI_DOMAIN_MEMREGION_SU_READABLE |
+				SBI_DOMAIN_MEMREGION_SU_WRITABLE |
+				SBI_DOMAIN_MEMREGION_ENF_PERMISSIONS, &reg);
 		sbi_domain_root_add_memregion(&reg);
 #endif
 	}

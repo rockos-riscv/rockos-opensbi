@@ -56,6 +56,8 @@ static void mtimer_time_wr32(bool timecmp, u64 value, volatile u64 *addr)
 	writel_relaxed((u32)value, (void *)(addr));
 }
 
+extern u64 eic770x_mtimer_value(struct aclint_mtimer_data *mt);
+
 static u64 mtimer_value(void)
 {
 	struct sbi_scratch *scratch = sbi_scratch_thishart_ptr();
@@ -64,9 +66,12 @@ static u64 mtimer_value(void)
 	mt = mtimer_get_hart_data_ptr(scratch);
 	if (!mt)
 		return 0;
-
+#ifdef CONFIG_PLATFORM_ESWIN_EIC770X
+	return eic770x_mtimer_value(mt);
+#else
 	/* Read MTIMER Time Value */
 	return mt->time_rd((void *)mt->mtime_addr);
+#endif
 }
 
 static void mtimer_event_stop(void)

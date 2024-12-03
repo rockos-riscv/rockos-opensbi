@@ -6,6 +6,7 @@
 #include <sbi/sbi_ecall_interface.h>
 #include <sbi/sbi_system.h>
 #include <sbi/sbi_timer.h>
+#include <sbi_utils/timer/aclint_mtimer.h>
 
 #ifdef CONFIG_PLATFORM_ESWIN_EIC7700
 #define BR2_CHIPLET_1
@@ -202,7 +203,49 @@ static void eic770x_fw_init(void *fdt, const struct fdt_match *match)
 	writel(fw_text_start_addr>>32, (void *)(0x71828000UL + 0x334));
 	writel(fw_text_start_addr&0xfffffffful, (void *)(0x71828000UL + 0x338));
 	writel(0xfffffffful, (void *)(0x71828000UL + 0x44c));  //release die1 u84
+
+	// sync mtime between die0 and die1
+	asm volatile("nop");
+	asm volatile("nop");
+	asm volatile("nop");
+	asm volatile("nop");
+	asm volatile("nop");
+	asm volatile("nop");
+	writel(0,(void *)(0x2000000 + 0xbff8));
+	writel(0,(void *)(0x2000000 + 0x20000000 + 0xbff8));
 #endif
+}
+
+static spinlock_t mtime_lock = SPIN_LOCK_INITIALIZER;
+
+u64 eic770x_mtimer_value(struct aclint_mtimer_data *mt)
+{
+	u64 d0, d1, val;
+
+// SOC with single die mode
+#if !defined(BR2_CHIPLET_1_DIE1_AVAILABLE) && defined(BR2_CHIPLET_1)
+	/* Read MTIMER Time Value */
+	return mt->time_rd((u64 *)((void *)mt->mtime_addr));
+#elif defined(BR2_CHIPLET_1_DIE1_AVAILABLE) && defined(BR2_CHIPLET_1)
+	return mt->time_rd((u64 *)((void *)mt->mtime_addr + 0x20000000));
+#endif
+
+// SOC with dual dies mode
+// sync with bigger value of mtime
+	spin_lock(&mtime_lock);
+	d0 = mt->time_rd((u64 *)((void *)mt->mtime_addr));
+	d1 = mt->time_rd((u64 *)((void *)mt->mtime_addr + 0x20000000));
+	if (d0 > d1) {
+		mt->time_wr(false, d0, (u64 *)((void *)mt->mtime_addr + 0x20000000));
+		val = d0;
+	} else if (d0 < d1) {
+		mt->time_wr(false, d1, (u64 *)((void *)mt->mtime_addr));
+		val = d1;
+	} else {
+		val = d0;
+	}
+	spin_unlock(&mtime_lock);
+	return val;
 }
 
 static int eic770x_nascent_init(void)

@@ -34,5 +34,26 @@ config FW_PAYLOAD_FDT_ADDR
 	default 0xf8000000
 endif
 
+if PLATFORM_ESWIN_EIC7702
+config PLATFORM_SPECAL_ADDR
+	bool
+	default y
+config FW_TEXT_START
+	hex
+	default 0x80000000
+config FW_JUMP_ADDR
+	hex
+	default 0xf8000000
+config FW_JUMP_FDT_ADDR
+	hex
+	default 0xf8000000
+config FW_PAYLOAD_OFFSET
+	hex
+	default 0x200000
+config FW_PAYLOAD_FDT_ADDR
+	hex
+	default 0xf8000000
+endif
+
 
 endif

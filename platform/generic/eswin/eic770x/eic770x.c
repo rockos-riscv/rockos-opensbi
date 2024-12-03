@@ -13,6 +13,11 @@
 #define BR2_CHIPLET_1_DIE0_AVAILABLE
 #endif
 
+#ifdef CONFIG_PLATFORM_ESWIN_EIC7702
+#define BR2_CHIPLET_2
+#define BR2_CHIPLET_1_DIE1_AVAILABLE
+#endif
+
 /* Full tlb flush always */
 #define EIC770X_TLB_RANGE_FLUSH_LIMIT	0
 
